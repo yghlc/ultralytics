@@ -1,11 +1,11 @@
 # Ultralytics YOLO 🚀, GPL-3.0 license
+import sys
 
-import hydra
 import torch
 
 from ultralytics.yolo.engine.predictor import BasePredictor
 from ultralytics.yolo.engine.results import Results
-from ultralytics.yolo.utils import DEFAULT_CONFIG, ROOT, ops
+from ultralytics.yolo.utils import DEFAULT_CFG, ROOT, ops
 from ultralytics.yolo.utils.plotting import Annotator, colors, save_one_box
 
 
@@ -20,12 +20,13 @@ class DetectionPredictor(BasePredictor):
         img /= 255  # 0 - 255 to 0.0 - 1.0
         return img
 
-    def postprocess(self, preds, img, orig_img):
+    def postprocess(self, preds, img, orig_img, classes=None):
         preds = ops.non_max_suppression(preds,
                                         self.args.conf,
                                         self.args.iou,
                                         agnostic=self.args.agnostic_nms,
-                                        max_det=self.args.max_det)
+                                        max_det=self.args.max_det,
+                                        classes=self.args.classes)
 
         results = []
         for i, pred in enumerate(preds):
@@ -81,12 +82,18 @@ class DetectionPredictor(BasePredictor):
         return log_string
 
 
-@hydra.main(version_base=None, config_path=str(DEFAULT_CONFIG.parent), config_name=DEFAULT_CONFIG.name)
-def predict(cfg):
-    cfg.model = cfg.model or "yolov8n.pt"
-    cfg.source = cfg.source if cfg.source is not None else ROOT / "assets"
-    predictor = DetectionPredictor(cfg)
-    predictor.predict_cli()
+def predict(cfg=DEFAULT_CFG, use_python=False):
+    model = cfg.model or "yolov8n.pt"
+    source = cfg.source if cfg.source is not None else ROOT / "assets" if (ROOT / "assets").exists() \
+        else "https://ultralytics.com/images/bus.jpg"
+
+    args = dict(model=model, source=source, verbose=True)
+    if use_python:
+        from ultralytics import YOLO
+        YOLO(model)(**args)
+    else:
+        predictor = DetectionPredictor(args)
+        predictor.predict_cli()
 
 
 if __name__ == "__main__":

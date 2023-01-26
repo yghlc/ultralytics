@@ -49,6 +49,8 @@ def test_predict_img():
     assert len(output) == 1, "predict test failed"
     output = model(source=[img, img], save=True, save_txt=True)  # batch
     assert len(output) == 2, "predict test failed"
+    output = model(source=[img, img], save=True, stream=True)  # stream
+    assert len(list(output)) == 2, "predict test failed"
     tens = torch.zeros(320, 640, 3)
     output = model(tens.numpy())
     assert len(output) == 1, "predict test failed"
@@ -109,9 +111,11 @@ def test_export_coreml():
     model.export(format='coreml')
 
 
-def test_export_paddle():
-    model = YOLO(MODEL)
-    model.export(format='paddle')
+def test_export_paddle(enabled=False):
+    # Paddle protobuf requirements conflicting with onnx protobuf requirements
+    if enabled:
+        model = YOLO(MODEL)
+        model.export(format='paddle')
 
 
 def test_all_model_yamls():
@@ -125,7 +129,3 @@ def test_workflow():
     model.val()
     model.predict(SOURCE)
     model.export(format="onnx", opset=12)  # export a model to ONNX format
-
-
-if __name__ == "__main__":
-    test_predict_img()

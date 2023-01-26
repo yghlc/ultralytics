@@ -1,24 +1,26 @@
 # Ultralytics YOLO 🚀, GPL-3.0 license
 
-import hydra
+import sys
+
 import torch
 
 from ultralytics.yolo.engine.results import Results
-from ultralytics.yolo.utils import DEFAULT_CONFIG, ROOT, ops
+from ultralytics.yolo.utils import DEFAULT_CFG, ROOT, ops
 from ultralytics.yolo.utils.plotting import colors, save_one_box
 from ultralytics.yolo.v8.detect.predict import DetectionPredictor
 
 
 class SegmentationPredictor(DetectionPredictor):
 
-    def postprocess(self, preds, img, orig_img):
+    def postprocess(self, preds, img, orig_img, classes=None):
         # TODO: filter by classes
         p = ops.non_max_suppression(preds[0],
                                     self.args.conf,
                                     self.args.iou,
                                     agnostic=self.args.agnostic_nms,
                                     max_det=self.args.max_det,
-                                    nm=32)
+                                    nm=32,
+                                    classes=self.args.classes)
         results = []
         proto = preds[1][-1]
         for i, pred in enumerate(p):
@@ -87,7 +89,7 @@ class SegmentationPredictor(DetectionPredictor):
                 c = int(cls)  # integer class
                 label = None if self.args.hide_labels else (
                     self.model.names[c] if self.args.hide_conf else f'{self.model.names[c]} {conf:.2f}')
-                self.annotator.box_label(d.xyxy.squeeze(), label, color=colors(c, True))
+                self.annotator.box_label(d.xyxy.squeeze(), label, color=colors(c, True)) if self.args.boxes else None
             if self.args.save_crop:
                 imc = im0.copy()
                 save_one_box(d.xyxy,
@@ -98,13 +100,18 @@ class SegmentationPredictor(DetectionPredictor):
         return log_string
 
 
-@hydra.main(version_base=None, config_path=str(DEFAULT_CONFIG.parent), config_name=DEFAULT_CONFIG.name)
-def predict(cfg):
-    cfg.model = cfg.model or "yolov8n-seg.pt"
-    cfg.source = cfg.source if cfg.source is not None else ROOT / "assets"
+def predict(cfg=DEFAULT_CFG, use_python=False):
+    model = cfg.model or "yolov8n-seg.pt"
+    source = cfg.source if cfg.source is not None else ROOT / "assets" if (ROOT / "assets").exists() \
+        else "https://ultralytics.com/images/bus.jpg"
 
-    predictor = SegmentationPredictor(cfg)
-    predictor.predict_cli()
+    args = dict(model=model, source=source, verbose=True)
+    if use_python:
+        from ultralytics import YOLO
+        YOLO(model)(**args)
+    else:
+        predictor = SegmentationPredictor(args)
+        predictor.predict_cli()
 
 
 if __name__ == "__main__":
