@@ -3,7 +3,7 @@
 Simple training loop; Boilerplate that could apply to any arbitrary neural network,
 """
 
-import os
+import os,sys
 import subprocess
 import time
 from collections import defaultdict
@@ -538,9 +538,9 @@ class BaseTrainer:
             self.ema.updates = ckpt['updates']
         if self.resume:
             if start_epoch <= 0:
-                f'{self.args.model} training to {self.epochs} epochs is finished, nothing to resume.\n' \
-                f"Start a new training without --resume, i.e. 'yolo task=... mode=train model={self.args.model}'"
-                return
+                LOGGER.info(f'{self.args.model} training to {self.epochs} epochs is finished, nothing to resume.\n' \
+                f"Start a new training without --resume, i.e. 'yolo task=... mode=train model={self.args.model}'")
+                sys.exit(0)  # cannot use "return", because it start training again.
             LOGGER.info(
                 f'Resuming training from {self.args.model} from epoch {start_epoch} to {self.epochs} total epochs')
         if self.epochs < start_epoch:
