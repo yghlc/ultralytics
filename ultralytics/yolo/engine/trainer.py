@@ -537,7 +537,7 @@ class BaseTrainer:
             self.ema.ema.load_state_dict(ckpt['ema'].float().state_dict())  # EMA
             self.ema.updates = ckpt['updates']
         if self.resume:
-            if start_epoch > 0:
+            if start_epoch <= 0:
                 f'{self.args.model} training to {self.epochs} epochs is finished, nothing to resume.\n' \
                 f"Start a new training without --resume, i.e. 'yolo task=... mode=train model={self.args.model}'"
                 return
