@@ -35,7 +35,37 @@ def prediction():
     # from ndarray
     im2 = cv2.imread(img)
     results = model.predict(source=im2, save=True, save_txt=True)  # save predictions as labels
+    # print("results of model.predict", results)
+    print("results of model.predict:")
+    for r in results:
+        boxes = r.boxes.numpy()
+        print('boxes', boxes)
+        print('boxes.xyxy', boxes.xyxy)
+        print('boxes.xywh', boxes.xywh)
+        print('boxes.xyxyn', boxes.xyxyn)
+        print('boxes.conf', boxes.conf)
+        print('boxes.cls', boxes.cls)
 
+    print("\n\n Try to use model, not model.predict:")
+    img3 = '000000000597.jpg'
+    im3 = cv2.imread(img3)
+    img4 = '000000000643.jpg'
+    im4 = cv2.imread(img4)
+    inputs = [im2,im3,im4]  # list of numpy arrays (image with different size is oK)
+    results = model(inputs, stream=True)  # generator of Results objects
+
+    for r in results:
+        boxes = r.boxes.numpy()  # Boxes object for bbox outputs #.numpy()
+        # masks = r.masks  # Masks object for segmenation masks outputs
+        # probs = r.probs  # Class probabilities for classification outputs
+        print('boxes',boxes)
+        print('boxes.xyxy',boxes.xyxy)
+        print('boxes.xywh',boxes.xywh)
+        print('boxes.xyxyn',boxes.xyxyn)
+        print('boxes.conf',boxes.conf)
+        print('boxes.cls',boxes.cls)
+        # print('masks',masks)
+        # print('probs',probs)
 
 def main():
 
